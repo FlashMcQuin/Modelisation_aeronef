@@ -2,7 +2,7 @@ import numpy as np
 import control as c
 import atm_std as atm
 import sisopy31 as siso
-
+import matplotlib.pyplot as plt
 class Aeronef():
     def __init__(self, M = 1.21, z=1050):
         self.z0=z*0.3048            #convert feet to meters
@@ -120,34 +120,49 @@ class Aeronef():
         
         B = np.array([0, Z_deltam, -Z_deltam, m_deltam, 0, 0])
         B=B.reshape(-1,1)
-        C = np.eye(6)
-        D = np.zeros((6,1))
+        C = np.zeros((1,6))
+        C[0,2]=1
+        D = np.zeros((1,1))
 
         return A, B, C, D
     
-    def transcient_phase(self,A, B, C, D, mode):
+    def transcient_phase_open_loop(self,A, B, C, D, mode, title):
         ss = c.ss(A, B, C, D)
         ri,a,b,xi,w,st = siso.damp(ss)
         print(f"\n----------------- {mode} Mode :    --------------------------------------\n ")
         for i in st : 
             print(i)
 
-        """
         tf = siso.ss2tf(ss)
-        print(f"Transfer function : \n ", tf)"""
+        print(f"Transfer function : \n ", tf)
 
-        k = siso.sisotool(ss)
+        Y, t=c.matlab.step(tf)
+        plt.plot(t,Y)
+        plt.title("Step Response"+title)
+        plt.xlabel("Time (s)")
+        plt.ylabel("(rad)")
+        plt.show()
 
-        print(k)
+    def transient_phase_closed_loop(self, A, B, C, D, title):
+        ss = c.ss(A, B, C, D)
+        #k = siso.sisotool(ss)
+        k = -0.08528140111595887
+        print("k = ", k)
+        Ak = A-k*B@C
+        Bk = k*B
+        Dk=k*D
+        closed_loop_ss = c.ss(Ak, Bk, C, Dk)
+        closed_loop_tf = siso.ss2tf(closed_loop_ss)
+        print(f"Transfer function : \n ", closed_loop_tf)
+        ri,a,b,xi,w,st = siso.damp(closed_loop_ss)
+        for i in st : 
+            print(i)
 
-
-
-
-
-
-    
-
-
-
+        Y, t=c.matlab.step(closed_loop_tf, 10)
+        plt.plot(t,Y)
+        plt.title("Step Response "+title)
+        plt.xlabel("Time (s)")
+        plt.ylabel("y(t)")
+        plt.show()
 
 
