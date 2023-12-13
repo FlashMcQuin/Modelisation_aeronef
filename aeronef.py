@@ -134,9 +134,9 @@ class Aeronef():
             print(i)
         tf = siso.ss2tf(ss)
         print(f"Transfer function : \n ", tf)
-        Y, t=c.matlab.step(tf)
-        plt.plot(t,Y)
-        plt.title("Step Response"+title)
+        Y, t=c.matlab.step(tf, 10)
+        plt.plot(t,Y, label= title)
+        plt.title("(Open Loop) Step Response"+title)
         plt.xlabel("Time (s)")
         plt.ylabel("(rad)")
 
@@ -145,10 +145,13 @@ class Aeronef():
         k = siso.sisotool(ss)
         return k
     
-    def closed_loop(self, A, B, C, D, title, k):
+    def correction_open_loop(self, A, B, C, D, title, k):
         # k was found with the use of sisotool on the line above
         print("k = ", k)
-        Ak = A-k*B@C
+        print(B)
+        print("@")
+        print(C)
+        Ak = A-k*B*C
         Bk = k*B
         Dk = k*D
         closed_loop_ss = c.ss(Ak, Bk, C, Dk)
@@ -157,12 +160,6 @@ class Aeronef():
         ri,a,b,xi,w,st = siso.damp(closed_loop_ss)
         for i in st : 
             print(i)
-
-        Y, t=c.matlab.step(closed_loop_tf, 10)
-        plt.plot(t,Y)
-        plt.title("Step Response "+title)
-        plt.xlabel("Time (s)")
-        plt.ylabel("y(t)")
 
         return Ak, Bk
 

@@ -53,54 +53,64 @@ with a damping ratio at 1. -> gamma & V (phugoid)
 #fig, axs = plt.subplots(2, 2)
 
 # x = [gamma, alpha, q, theta, z]
+
 #Perfect Auto-throttle
-Aph = A[0:2,0:2]
-Bph = B[:2]
-Cph = C[0,0:2]
-Cph_gamma= np.array([1,0])
-Cph_alpha=np.array([0,1])
-print("taille A et C : ", Aph.size, Cph_gamma.size)
-#plt.subplot(2, 2, 1)
-
-aero.open_loop(Aph, Bph, Cph_alpha, D, mode = "Phugoid", title = " C_alpha")
-#plt.subplot(2, 2, 2)
-#aero.transcient_phase_open_loop(Aph, Bph, Cph_alpha, D, mode = "Phugoid", title = "C_alpha")
-plt.show()
-Asp = A[2:4, 2:4]
-Bsp = B[2:4]
-Cq= np.array([1,0])
-aero.open_loop(Asp, Bsp, Cq, D, mode = "Short Period", title= " Cq")
-plt.show()
-
 A_new = A[1:, 1:] # size 5 without V
 B_new = B[1:] # size 5 without V
-Calpha = np.zeros((1,5))
-Calpha[0,1]=1
+print("B_new size : ", B_new.size)
+C_gamma= np.array([1,0,0,0,0])
+C_alpha=np.array([0,1,0,0,0])
+C_q= np.array([0,0,1,0,0])
+C_z= np.array([0,0,0,0,1])
 
-#k=aero.find_k(A_new, B_new, Cgamma, D)
+
+aero.open_loop(A_new, B_new, C_alpha, D, mode = "", title = " alpha")
+
+
+#aero.open_loop(A_new, B_new, C_q, D, mode = "", title= " C_q")
+
+
+
+#k=aero.find_k(A_new, B_new, C_q, D)
 k=-0.08528140111595887
-#plt.subplot(2, 2, 3)
-Aq, Bq = aero.closed_loop(A_new, B_new, Calpha, D, title = "Calpha", k=k)
-plt.show()
+Aq, Bq = aero.correction_open_loop(A_new, B_new, C_q, D, title = "Calpha", k=k)
 
-Cq = np.zeros((1,5))
-Cq[0,2] = 1
+sys_cq = c.ss(A_new, B_new, C_q, D) # Aq et Bq
+sys_calpha = c.ss(A_new, B_new, C_alpha, D)
 
-kq=aero.find_k(A_new, B_new, Cq, D)
-#plt.subplot(2, 2, 4)
-#aero.transient_phase_closed_loop(A_new, B_new, Cq, D, title = "Cq", k=kq)
-#plt.show()
-
+block1 = c.feedback(k, sys_cq)
+block2 = c.series(block1,sys_calpha)
+Y, t = c.matlab.step(block2, 10) # 10 seconds
+plt.plot(t, Y, label="alpha with kq")
+plt.title("Closed loop alpha")
+plt.legend()
 
 ############### Washout filter part #######################
 to = 0.75
-washout= c.tf([to], [to,1])
-sys_cq = c.ss(A_new, B_new, Cq, D)
-sys_calpha = c.ss(A_new, B_new, Calpha, D)
+washout= c.tf([to, 0], [to,1])
 block1 = c.series(washout,c.ss2tf(sys_cq))
 block2 = c.feedback(k, block1)
 block3 = c.series(1/k, block2, sys_calpha)
 Y, t=c.matlab.step(block3, 10) #10 seconds
-plt.plot(t, Y)
+plt.plot(t, Y, label="alpha with kq and washout filter")
+plt.title("Washout filter")
+plt.xlabel("t(s)")
+plt.ylabel("alpha (rad)")
+plt.legend()
 plt.show()
 #########################################################
+
+
+#kgamma=aero.find_k(Aq, Bq, C_gamma, D)
+kgamma =  17.97283
+
+Agamma, Bgamma = aero.correction_open_loop(Aq, Bq, C_gamma, D, title = "Cgamma", k=kgamma)
+sys_cgamma = c.ss(Aq, Bq, C_gamma, D)
+
+Y, t = c.matlab.step(sys_cgamma, 10) # 10 seconds
+plt.plot(t, Y, label="z with kgamma")
+plt.title("Closed loop ")
+plt.legend()
+plt.show()
+
+kz = aero.find_k(Agamma, Bgamma, C_z, D)
