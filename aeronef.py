@@ -126,31 +126,31 @@ class Aeronef():
 
         return A, B, C, D
     
-    def transcient_phase_open_loop(self,A, B, C, D, mode, title):
+    def open_loop(self, A, B, C, D, mode, title):
         ss = c.ss(A, B, C, D)
         ri,a,b,xi,w,st = siso.damp(ss)
         print(f"\n----------------- {mode} Mode :    --------------------------------------\n ")
         for i in st : 
             print(i)
-
         tf = siso.ss2tf(ss)
         print(f"Transfer function : \n ", tf)
-
         Y, t=c.matlab.step(tf)
         plt.plot(t,Y)
         plt.title("Step Response"+title)
         plt.xlabel("Time (s)")
         plt.ylabel("(rad)")
-        plt.show()
 
-    def transient_phase_closed_loop(self, A, B, C, D, title):
+    def find_k(self,A,B,C,D):
         ss = c.ss(A, B, C, D)
-        #k = siso.sisotool(ss)
-        k = -0.08528140111595887
+        k = siso.sisotool(ss)
+        return k
+    
+    def closed_loop(self, A, B, C, D, title, k):
+        # k was found with the use of sisotool on the line above
         print("k = ", k)
         Ak = A-k*B@C
         Bk = k*B
-        Dk=k*D
+        Dk = k*D
         closed_loop_ss = c.ss(Ak, Bk, C, Dk)
         closed_loop_tf = siso.ss2tf(closed_loop_ss)
         print(f"Transfer function : \n ", closed_loop_tf)
@@ -163,6 +163,7 @@ class Aeronef():
         plt.title("Step Response "+title)
         plt.xlabel("Time (s)")
         plt.ylabel("y(t)")
-        plt.show()
+
+        return Ak, Bk
 
 
