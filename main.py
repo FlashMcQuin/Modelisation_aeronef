@@ -113,4 +113,25 @@ plt.title("Closed loop ")
 plt.legend()
 plt.show()
 
-kz = aero.find_k(Agamma, Bgamma, C_z, D)
+sys_gamma = c.ss(Aq, Bq, C_gamma, D)
+block4 = c.feedback(kgamma, sys_gamma)
+Y, t = c.matlab.step(block4, 10) # 10 seconds
+plt.plot(t, Y, label="z with kgamma")
+plt.title("Closed loop corrected with kgamma ")
+plt.legend()
+plt.show()
+
+
+#kz = aero.find_k(Agamma, Bgamma, C_z, D) #trouvé
+kz= 0.00392
+
+Az, Bz = aero.correction_open_loop(Agamma, Bgamma, C_z, D, title = "Cgamma", k=kz)
+
+sys_z = c.ss(Az, Bz, C_gamma, D)
+block5 = c.feedback(kz, sys_z)
+Y, t = c.matlab.step(block5, 10) # 10 seconds
+plt.plot(t, Y)
+plt.title("Closed loop corrected with kz ")
+plt.show()
+
+
