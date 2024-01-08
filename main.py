@@ -251,9 +251,7 @@ kalpha= 0.19729
 Aalpha, Balpha, sys_alpha, tf_alpha = aero.correction_open_loop(A_new_cog, B_new_cog, C_new_cog, D, k=kalpha)
 y,t=c.matlab.step(sys_alpha, 10)
 plt.plot(t,y)
-plt.title(r"Step response with control feedback on $\alpha$")
+plt.title(r"Step response with control feedback on $\alpha")
 plt.xlabel("Time (s)")
 plt.ylabel(r'$\alpha$')
 plt.show()
-
-
